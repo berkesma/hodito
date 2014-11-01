@@ -4,7 +4,8 @@ var tabornokok_bonusz = [0, 0.03, 0.05, 0.06, 0.07, 0.08, 0.1, 0.2];
 var erosebb_szorzo = 0.1;
 
 /* Védő értékek */
-var vedo = {katona:1, vedo:4, tamado:0, ijasz:6, toronyij:12, lovas:2, elit:5};
+var vedo = {katona:1, vedo:4, tamado:0, ijasz:6, toronyij:6 lovas:2, elit:5}; 
+	//toronyíjat kivenném, csak bonyolítja a helyzetet
 var szabadsag = [0, 0.1, 0.2, 0.3];
 
 /* Élőhalott szintenkénti bónusz */
@@ -33,14 +34,21 @@ function calculateDefPoints() {
     points += tamado * window.vedo.tamado;
     points += lovas * window.vedo.lovas;
     points += elit * window.vedo.elit;
+    points += ijasz * window.vedo.ijasz;
+    
     /* Toronyíjászok pontjai */
     var lakashelyzet = parseInt(0+$('#csata_vedekezo_lakashelyzet_tudomany').val());
-    if (lakashelyzet==0) {
+    if (lakashelyzet==0) { 
+    // Sok helyen van így sajnos. Szebb az lenne, ha default beírt értékek lennének és nem is szabadna üresen hagyni a formot.
+    // Ha nem lenne itt ez a vizsgálat, az összes faji sajátosság mehetne egy-egy if (faj == x) vizsgálatba, nem csak mindig adott esetek
 	    var lakashelyzeti_szorzo = window.tudomany_alap;
 	    if (faj==3) {
-	        // elf
+	        // félelf
 	        lakashelyzeti_szorzo = 40;
-	    } else if (faj==5) {
+	    } else if (faj==4) {
+                // törpe
+                lakashelyzeti_szorzo = 56; // 1.3 * 1.2 = 1.56
+            } else if (faj==5) {
 	        // gnóm
 	        lakashelyzeti_szorzo = 50;
 	    } else if (faj==6) {
@@ -48,24 +56,28 @@ function calculateDefPoints() {
 	        lakashelyzeti_szorzo = 40;
 	    } else if (faj==7) {
 	        // élőhalott
-	        lakashelyzeti_szorzo = 0;
+	        lakashelyzeti_szorzo = window.elohalott_bonusz[szint-1] * 100;
 	    }
+	    /* Lakitekit nem módosítja a tudós személyiség
 	    if ($('#csata_vedekezo_tudos').is(':checked')) {
 	        // tudós
 	        if (faj!=7) {
 	            lakashelyzeti_szorzo += 5;
 	        }
 	    }
+	    */
     } else {
-    	lakashelyzeti_szorzo = lakashelyzet;
+    	lakashelyzeti_szorzo = lakashelyzet; //ez így picit para, ha baromságot írnak be (pl 65), nem ellenőrzi
     }
-    if ((ortornyok*40) < ijasz) {
+    /* Ez az egész rengeteg hibalehetőséget rejt magában és túlbonyolított.
+    if ((ortornyok*40) < ijasz) { // nem jó, ignorálja a lakitekit
         if (faj==4) {
             // törpe
             var toronyij = ((ortornyok*40)*1.2)*(1+(lakashelyzeti_szorzo/100));
         } else if (faj==7) {
         	// élőhalott
-        	var toronyij = ((ortornyok*40)*(1+(window.elohalott_bonusz[szint-1])))*(1+(lakashelyzeti_szorzo/100));
+        	var toronyij = ((ortornyok*40)*(1+(window.elohalott_bonusz[szint-1])))*(1+(lakashelyzeti_szorzo/100)); 
+        	// ez elvileg jó, csak felesleges bele a lakiteki szorzó, úgyis nulla
         } else {
             var toronyij = ortornyok*40*(1+(lakashelyzeti_szorzo/100));
         }
@@ -79,8 +91,22 @@ function calculateDefPoints() {
         // elf
         toronyij_szorzo += 2;
     }
-    points += ijasz * window.vedo.ijasz;
+    */
+    
+    //Fenti toronyij helyett:
+    var toronyij_szorzo = window.vedo.toronyij;
+    if (faj == 1) {
+    	//elf
+    	toronyij_szorzo = 8;
+    }
+    
+    if (ijasz > (ortornyok * 40 * lakashelyzeti szorzo)){
+    	toronyij = ijasz;
+    } else {
+    	toronyij = ortornyok * 40 * lakashelyzeti szorzo;
+    }
     points += toronyij * toronyij_szorzo;
+    
     if (moral==0) {
         moral = 100;
     }
@@ -110,7 +136,7 @@ function calculateDefPoints() {
         mf_bonusz = points * window.mf_szorzo;
     }
     /* Védelem bónusz */
-    var vedelem_bonusz = 0
+    var vedelem_bonusz = 0;
     if ($('#csata_vedekezo_vedelem').is(':checked')) {
         vedelem_bonusz = points * window.vedelem_szorzo;
     }
